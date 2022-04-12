@@ -1,0 +1,25 @@
+version: "3"
+services:
+  #testprogram:
+  #  image: poe-trade-helper-testprogram
+  #  build:
+  #    context: .
+  #    dockerfile: PTH.Console/Dockerfile
+
+  mongo:
+    image: mongo
+    container_name: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+  
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    stdin_open: true
+    ports:
+      - "8081:8081"
+    links:
+      - mongo
+      - "15672:15672"
