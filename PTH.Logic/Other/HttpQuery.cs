@@ -1,15 +1,18 @@
 using System.Net.Http.Headers;
 using Newtonsoft.Json.Linq;
+using PTH.Domain.Queries;
 
-namespace PTH.Logic.Http;
+namespace PTH.Logic.Other;
 
 public class HttpQuery : IHttpQuery
 {
     private const string PoeTradeUri = "https://www.pathofexile.com/api/trade";
     private readonly HttpClient _client;
+    private readonly ICurrencyConverter _currencyConverter;
 
-    public HttpQuery()
+    public HttpQuery(ICurrencyConverter currencyConverter)
     {
+        _currencyConverter = currencyConverter;
         _client = new HttpClient();
         _client.DefaultRequestHeaders.Add("User-Agent", "C# Program");
     }
@@ -30,7 +33,7 @@ public class HttpQuery : IHttpQuery
         {
             Type = requestData.Type,
             Name = requestData.Variant,
-            MinPrice = Math.Round(prices.Min()),
+            MinPrice = Math.Round(prices.Min(), 2),
             AveragePriceOfFirstTen = Math.Round(prices.Average(), 2),
             Date = DateTime.Now
         };
@@ -55,23 +58,13 @@ public class HttpQuery : IHttpQuery
         {
             var itemsResponseBody = await _client.GetStringAsync(requestUri);
             var itemResponse = JObject.Parse(itemsResponseBody)["result"].Select(t => t["listing"]["price"]);
-            return itemResponse.Select(t => GetPriceInExalt(
-                double.Parse(t["amount"].Value<string>()),
-                t["currency"].Value<string>()));
+            return itemResponse.Select(t => _currencyConverter.ConvertToExalt(
+                t["currency"].Value<string>(),
+                double.Parse(t["amount"].Value<string>())).Result);
         }
         catch
         {
             return Enumerable.Empty<double>();
         }
-    }
-
-    private double GetPriceInExalt(double amount, string currency)
-    {
-        if (currency.Equals("chaos"))
-        {
-            amount /= 165;
-        }
-
-        return amount;
     }
 }

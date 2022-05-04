@@ -1,7 +1,6 @@
-using System.Collections;
-using MongoDB.Bson;
 using MongoDB.Driver;
-using PTH.Logic.Http;
+using PTH.Domain.Queries;
+using PTH.Logic.Other;
 
 namespace PTH.Logic.Persistence;
 
@@ -30,21 +29,16 @@ public class ClusterJewelBackupRepository : IClusterJewelBackupRepository
 
     public async Task FeedClusterVariantPreviewsIfEmpty()
     {
-        var previews = _database.GetCollection<BsonDocument>("previews");
+        var previews = _database.GetCollection<ClusterVariantPreview>("previews");
         if (await previews.EstimatedDocumentCountAsync() > 0)
         {
             return;
         }
-        var variants = await _csvReader.ReadLines();
-        foreach (var variant in variants)
+        await previews.InsertManyAsync((await _csvReader.ReadLines()).Select(v => new ClusterVariantPreview
         {
-            await previews.InsertOneAsync(new BsonDocument()
-            {
-                {"type_name", variant.Type},
-                {"variant_name", variant.Variant},
-                {"price_avg", (double)0}
-            });
-        }
+            VariantName = v.Variant,
+            AveragePrice = 0d
+        }));
     }
 
     public Task FeedClusterVariantDetails()

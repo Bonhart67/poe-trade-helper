@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
+using PTH.Domain.Queries;
 
-namespace PTH.Logic.Http;
+namespace PTH.Logic.Other;
 
 public class CsvReader : ICsvReader
 {

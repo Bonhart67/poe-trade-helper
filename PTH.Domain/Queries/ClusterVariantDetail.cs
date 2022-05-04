@@ -1,7 +1,8 @@
-namespace PTH.Logic;
+namespace PTH.Domain.Queries;
 
-public record ClusterVariantDetail
+public class ClusterVariantDetail
 {
+    public Guid Id;
     public string Type { get; set; }
     public string Name { get; set; }
     public double MinPrice { get; set; }

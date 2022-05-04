@@ -1,11 +1,13 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using PTH.Logic;
+using PTH.Domain.Queries;
+using PTH.Logic.Create;
+using PTH.Logic.Queries;
 
 namespace PTH.API.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("/api/[Controller]")]
 public class ClusterController  : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -15,17 +17,33 @@ public class ClusterController  : ControllerBase
         _mediator = mediator;
     }
     
-    // [HttpGet]
-    // public async Task<IEnumerable<ClusterDTO>> GetAllClusterVariants()
-    // {
-    //     var result = await _mediator.Send(new GetClustersRequest());
-    //     return Ok();
-    // }
-    
-    [HttpPost]
+    [HttpGet(Name="GetVariantDetails")]
+    [Route("/api/[controller]/details/{variant}")]
+    public async Task<IEnumerable<ClusterVariantDetail>> GetVariantDetails([FromBody] string variant)
+    {
+        return await _mediator.Send(new GetClusterVariantDetailsRequest(variant));
+    }
+
+    [HttpGet(Name="GetVariantPreviews")]
+    [Route("/api/[controller]/previews/{type}")]
+    public async Task<IEnumerable<ClusterVariantPreview>> GetVariantPreviewsOfType([FromBody] string type)
+    {
+        return await _mediator.Send(new GetClusterVariantPreviewsRequest(type));
+    }
+
+    [HttpPost(Name="SaveAllClusterVariants")]
+    [Route("/api/[controller]/save-details")]
     public async Task<IActionResult> SaveAllClusterVariants()
     {
-        var result = await _mediator.Send(new SaveClustersRequest());
+        await _mediator.Send(new CreateClusterDetailsRequest());
+        return Ok();
+    }
+
+    [HttpPost(Name="UpdateAllClusterPreviews")]
+    [Route("/api/[controller]/update-previews")]
+    public async Task<IActionResult> UpdateAllClusterPreviews()
+    {
+        await _mediator.Send(new UpdateClusterPreviewsRequest());
         return Ok();
     }
 }

@@ -1,6 +1,6 @@
-namespace PTH.Logic;
+namespace PTH.Domain.Queries;
 
-public record ClusterVariantRequestData
+public class ClusterVariantRequestData
 {
     public string Type { get; set; }
     public string Variant { get; set; }

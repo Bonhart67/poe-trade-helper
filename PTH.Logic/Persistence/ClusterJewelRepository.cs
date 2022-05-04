@@ -1,6 +1,6 @@
-using MongoDB.Bson;
 using MongoDB.Driver;
-using PTH.Logic.Http;
+using PTH.Domain.Queries;
+using PTH.Logic.Other;
 
 namespace PTH.Logic.Persistence;
 
@@ -22,44 +22,40 @@ public class ClusterJewelRepository : IClusterJewelRepository
 
     public async Task UpdateClusterPreviews()
     {
-        var previews = _database.GetCollection<BsonDocument>("previews");
-        
-        // foreach (var variant in variants)
-        // {
-        //     var details = (await GetClusterDetails(variant)).LastOrDefault();
-        //     var filter = Builders<BsonDocument>.Filter.Eq("variant_name", variant);
-        //     var update = Builders<BsonDocument>.Update.Set("price_avg", details.AveragePriceOfFirstTen);
-        //     await previews.UpdateOneAsync(filter, update);
-        // }
+        var previews = _database.GetCollection<ClusterVariantPreview>("previews");
+        var details = _database.GetCollection<ClusterVariantDetail>("details");
+        var result = details.AsQueryable().ToList()
+            .GroupBy(d => d.Name)
+            .Select(g => g.MaxBy(d => d.Date))
+            .Select(d => new ClusterVariantPreview()
+            {
+                VariantName = d.Name,
+                AveragePrice = d.AveragePriceOfFirstTen
+            });
+
+        foreach (var variant in result)
+        {
+            var filter = Builders<ClusterVariantPreview>.Filter.Eq("VariantName", variant.VariantName);
+            var update = Builders<ClusterVariantPreview>.Update.Set("AveragePrice", variant.AveragePrice);
+            await previews.UpdateOneAsync(filter, update);
+        }
     }
 
-    public async Task<IEnumerable<ClusterVariantPreview>> GetClusterPreviews()
+    public async Task<IEnumerable<ClusterVariantPreview>> GetClusterPreviews(string type)
     {
-        var previews = _database.GetCollection<BsonDocument>("previews");
-        return (await previews.FindAsync(Builders<BsonDocument>.Filter.Empty)).ToEnumerable()
-            .Select(p => new ClusterVariantPreview
-            {
-                VariantName = p.GetElement("variant_name").Value.AsString,
-                AveragePrice = p.GetElement("price_avg").Value.AsDouble
-            }).ToList();
+        var previews = _database.GetCollection<ClusterVariantPreview>("previews");
+        return (await previews.FindAsync(Builders<ClusterVariantPreview>.Filter.Eq("Type", type))).ToEnumerable();
     }
 
     public async Task CreateClusterDetails()
     {
-        var details = _database.GetCollection<BsonDocument>("details");
-        foreach (var request in (await _csvReader.ReadLines()).Take(2))
+        var details = _database.GetCollection<ClusterVariantDetail>("details");
+        foreach (var request in (await _csvReader.ReadLines()).Take(20))
         {
             var result = await _httpQuery.FetchOne(request);
             if (result is not null)
             {
-                await details.InsertOneAsync(new BsonDocument
-                {
-                    {"type_name", result.Type},
-                    {"variant_name", result.Name},
-                    {"price_min", result.MinPrice},
-                    {"price_avg", result.AveragePriceOfFirstTen},
-                    {"date", result.Date},
-                });
+                await details.InsertOneAsync(result);
             }
 
             await Task.Delay(10000);
@@ -68,19 +64,10 @@ public class ClusterJewelRepository : IClusterJewelRepository
 
     public async Task<IEnumerable<ClusterVariantDetail>> GetClusterDetails(string? variantName = null)
     {
-        var details = _database.GetCollection<BsonDocument>("details");
+        var details = _database.GetCollection<ClusterVariantDetail>("details");
         var filter = variantName is null
-            ? Builders<BsonDocument>.Filter.Empty
-            : Builders<BsonDocument>.Filter.Eq("variant_name", variantName);
-        return (await details.FindAsync(filter)).ToEnumerable()
-            .Select(p => new ClusterVariantDetail
-            {
-                Type = p.GetElement("type_name").Value.AsString,
-                Name = p.GetElement("variant_name").Value.AsString,
-                MinPrice = p.GetElement("price_min").Value.AsDouble,
-                AveragePriceOfFirstTen = p.GetElement("price_avg").Value.AsDouble,
-                Date = p.GetElement("date").Value.AsBsonDateTime.ToLocalTime()
-            }).ToList();
-
+            ? Builders<ClusterVariantDetail>.Filter.Empty
+            : Builders<ClusterVariantDetail>.Filter.Eq("Name", variantName);
+        return (await details.FindAsync(filter)).ToEnumerable();
     }
 }

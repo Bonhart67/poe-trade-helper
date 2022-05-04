@@ -1,4 +1,6 @@
-namespace PTH.Logic.Http;
+using PTH.Domain.Queries;
+
+namespace PTH.Logic.Other;
 
 public interface ICsvReader
 {
