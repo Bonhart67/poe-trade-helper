@@ -1,0 +1,21 @@
+@model IEnumerable<PTH.Domain.Queries.ClusterVariantDetail>
+
+<table class="table table-dark table-striped">
+    <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Minimum Price</th>
+        <th>Average Price</th>
+        <th>Date</th>
+    </tr>
+    @foreach (var detail in Model)
+    {
+        <tr>
+            <td>@detail.Type</td>
+            <td>@detail.Name</td>
+            <td>@detail.MinPrice</td>
+            <td>@detail.AveragePriceOfFirstTen</td>
+            <td>@detail.Date</td>
+        </tr>
+    }
+</table>

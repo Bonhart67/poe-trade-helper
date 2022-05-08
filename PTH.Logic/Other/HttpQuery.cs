@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
 using PTH.Domain.Queries;
 
@@ -9,10 +10,12 @@ public class HttpQuery : IHttpQuery
     private const string PoeTradeUri = "https://www.pathofexile.com/api/trade";
     private readonly HttpClient _client;
     private readonly ICurrencyConverter _currencyConverter;
+    private readonly IConfiguration _configuration;
 
-    public HttpQuery(ICurrencyConverter currencyConverter)
+    public HttpQuery(ICurrencyConverter currencyConverter, IConfiguration configuration)
     {
         _currencyConverter = currencyConverter;
+        _configuration = configuration;
         _client = new HttpClient();
         _client.DefaultRequestHeaders.Add("User-Agent", "C# Program");
     }
@@ -41,11 +44,13 @@ public class HttpQuery : IHttpQuery
 
     private async Task<IEnumerable<string>> FetchItemIdsFromTradeSite(string requestBody)
     {
-        var tradeSearchRequestUri = $"{PoeTradeUri}/search/Archnemesis";
-        using var request = new HttpRequestMessage(new HttpMethod("POST"), tradeSearchRequestUri);
-        request.Content = new StringContent(requestBody);
-        request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-        var responseBody = await (await _client.SendAsync(request)).Content.ReadAsStringAsync();
+        var tradeSearchRequestUri = $"{PoeTradeUri}/search/{_configuration["CurrentLeague"]}";
+        using var requestMessage = new HttpRequestMessage(new HttpMethod("POST"), tradeSearchRequestUri);
+        requestMessage.Content = new StringContent(requestBody);
+        requestMessage.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+        var requestTask = _client.SendAsync(requestMessage);
+        await Task.WhenAll(requestTask, Task.Delay(5000));
+        var responseBody = await requestTask.Result.Content.ReadAsStringAsync();
         var response = JObject.Parse(responseBody)["result"];
         return response.HasValues 
             ? response.Select(t => t.Value<string>()).Take(10) 
@@ -56,8 +61,9 @@ public class HttpQuery : IHttpQuery
     {
         try
         {
-            var itemsResponseBody = await _client.GetStringAsync(requestUri);
-            var itemResponse = JObject.Parse(itemsResponseBody)["result"].Select(t => t["listing"]["price"]);
+            var requestTask = _client.GetStringAsync(requestUri);
+            await Task.WhenAll(requestTask, Task.Delay(5000));
+            var itemResponse = JObject.Parse(requestTask.Result)["result"].Select(t => t["listing"]["price"]);
             return itemResponse.Select(t => _currencyConverter.ConvertToExalt(
                 t["currency"].Value<string>(),
                 double.Parse(t["amount"].Value<string>())).Result);

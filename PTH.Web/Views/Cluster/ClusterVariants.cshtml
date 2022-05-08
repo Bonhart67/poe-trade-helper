@@ -1,0 +1,10 @@
+@model IEnumerable<PTH.Domain.Queries.ClusterVariantPreview>
+
+<ul>
+    @foreach (var variant in Model)
+    {
+        <li>
+            <a asp-controller="Cluster" asp-action="ClusterVariantDetails" asp-route-variant="@variant.VariantName">@variant.VariantName</a>
+        </li>
+    }
+</ul>

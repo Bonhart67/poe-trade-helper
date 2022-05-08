@@ -2,7 +2,7 @@ using MediatR;
 using PTH.Domain.Queries;
 using PTH.Logic.Persistence;
 
-namespace PTH.Logic.Queries;
+namespace PTH.Logic.Query;
 
 public record GetClusterVariantDetailsRequest(string Variant) : IRequest<IEnumerable<ClusterVariantDetail>>;
 

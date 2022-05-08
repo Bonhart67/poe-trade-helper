@@ -2,7 +2,7 @@
 using PTH.Domain.Queries;
 using PTH.Logic.Persistence;
 
-namespace PTH.Logic.Queries;
+namespace PTH.Logic.Query;
 
 public record GetClusterVariantPreviewsRequest(string Type) : IRequest<IEnumerable<ClusterVariantPreview>>;
 

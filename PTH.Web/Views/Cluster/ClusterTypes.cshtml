@@ -1,0 +1,10 @@
+@model IEnumerable<string>
+
+<ul>
+    @foreach (var type in Model)
+    {
+        <li>
+            <a asp-controller="Cluster" asp-action="ClusterVariants" asp-route-type="@type">@type</a>
+        </li>
+    }
+</ul>
