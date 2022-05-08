@@ -37,6 +37,7 @@ public class ClusterController : ControllerBase
 
     [HttpPost]
     [Route("/api/[controller]/[action]")]
+    [NonAction]
     public async Task<IActionResult> SaveAllClusterVariants()
     {
         await _mediator.Send(new CreateClusterDetailsRequest());
