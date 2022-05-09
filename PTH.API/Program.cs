@@ -48,7 +48,9 @@ builder.Services.AddQuartz(q =>
     q.AddTrigger(c => c
         .ForJob(updateClusterPreviewsJobKey)
         .WithIdentity($"{updateClusterPreviewsJobKey.Name}-trigger")
-        .WithCronSchedule("0 0 * * * ?"));
+        .WithSimpleSchedule(x => x
+            .WithIntervalInMinutes(5)
+            .RepeatForever()));
 });
 
 builder.Services.AddQuartzHostedService(q =>
