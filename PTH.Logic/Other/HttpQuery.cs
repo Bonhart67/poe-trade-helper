@@ -42,7 +42,7 @@ public class HttpQuery : IHttpQuery
         };
     }
 
-    private async Task<IEnumerable<string>> FetchItemIdsFromTradeSite(string requestBody)
+    private async Task<IEnumerable<string?>> FetchItemIdsFromTradeSite(string requestBody)
     {
         var tradeSearchRequestUri = $"{PoeTradeUri}/search/{_configuration["CurrentLeague"]}";
         using var requestMessage = new HttpRequestMessage(new HttpMethod("POST"), tradeSearchRequestUri);
@@ -52,9 +52,9 @@ public class HttpQuery : IHttpQuery
         await Task.WhenAll(requestTask, Task.Delay(5000));
         var responseBody = await requestTask.Result.Content.ReadAsStringAsync();
         var response = JObject.Parse(responseBody)["result"];
-        return response.HasValues 
-            ? response.Select(t => t.Value<string>()).Take(10) 
-            : Enumerable.Empty<string>();
+        if (response is null || !response.HasValues)
+            return Enumerable.Empty<string>();
+        return response.Select(t => t.Value<string>()).Take(10);
     }
 
     private async Task<IEnumerable<double>> FetchPrices(string requestUri)

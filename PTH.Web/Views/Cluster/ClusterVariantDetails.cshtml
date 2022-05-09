@@ -13,9 +13,9 @@
         <tr>
             <td>@detail.Type</td>
             <td>@detail.Name</td>
-            <td>@detail.MinPrice</td>
-            <td>@detail.AveragePriceOfFirstTen</td>
-            <td>@detail.Date</td>
+            <td>@detail.MinPrice.ToString("F2")</td>
+            <td>@detail.AveragePriceOfFirstTen.ToString("F2")</td>
+            <td>@detail.Date.ToString("yyyy-MM-dd hh:mm")</td>
         </tr>
     }
 </table>
