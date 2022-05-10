@@ -60,10 +60,13 @@ public class HttpQuery : IHttpQuery
         try
         {
             var responseBody = await _client.GetStringAsync(requestUri);
-            var itemResponse = JObject.Parse(responseBody)["result"].Select(t => t["listing"]["price"]);
-            return itemResponse.Select(t => _currencyConverter.ConvertToExalt(
-                t["currency"].Value<string>(),
-                double.Parse(t["amount"].Value<string>())).Result);
+            var itemResponse = JObject.Parse(responseBody)["result"]?
+                .Select(t => t["listing"]?["price"])
+                .Where(t => t is not null);
+            return itemResponse?.Select(t => _currencyConverter.ConvertToExalt(
+                       t["currency"].Value<string>(),
+                       double.Parse(t["amount"].Value<string>())).Result)
+                   ?? Enumerable.Empty<double>();
         }
         catch
         {
