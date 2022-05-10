@@ -69,6 +69,8 @@ public class ClusterJewelRepository : IClusterJewelRepository
             {
                 await details.InsertOneAsync(result);
             }
+
+            await Task.Delay(10000);
         }
     }
 

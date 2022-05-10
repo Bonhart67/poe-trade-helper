@@ -48,9 +48,7 @@ public class HttpQuery : IHttpQuery
         using var requestMessage = new HttpRequestMessage(new HttpMethod("POST"), tradeSearchRequestUri);
         requestMessage.Content = new StringContent(requestBody);
         requestMessage.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-        var requestTask = _client.SendAsync(requestMessage);
-        await Task.WhenAll(requestTask, Task.Delay(5000));
-        var responseBody = await requestTask.Result.Content.ReadAsStringAsync();
+        var responseBody = await (await _client.SendAsync(requestMessage)).Content.ReadAsStringAsync();
         var response = JObject.Parse(responseBody)["result"];
         if (response is null || !response.HasValues)
             return Enumerable.Empty<string>();
@@ -61,9 +59,8 @@ public class HttpQuery : IHttpQuery
     {
         try
         {
-            var requestTask = _client.GetStringAsync(requestUri);
-            await Task.WhenAll(requestTask, Task.Delay(5000));
-            var itemResponse = JObject.Parse(requestTask.Result)["result"].Select(t => t["listing"]["price"]);
+            var responseBody = await _client.GetStringAsync(requestUri);
+            var itemResponse = JObject.Parse(responseBody)["result"].Select(t => t["listing"]["price"]);
             return itemResponse.Select(t => _currencyConverter.ConvertToExalt(
                 t["currency"].Value<string>(),
                 double.Parse(t["amount"].Value<string>())).Result);
